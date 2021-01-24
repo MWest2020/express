@@ -1,15 +1,40 @@
-var express = require('express');
-var path = require('path');
-var favicon = require('serve-favicon');
-var logger = require('morgan');
-var cookieParser = require('cookie-parser');
-var bodyParser = require('body-parser');
-var mongoose = require('mongoose');
-var User = require("./models/user");
+const express = require('express');
+const path = require('path');
+const favicon = require('serve-favicon');
+const logger = require('morgan');
+const cookieParser = require('cookie-parser');
+const bodyParser = require('body-parser');
+const mongoose = require('mongoose');
+const User = require("./models/user");
 
-var routes = require('./routes/index');
+//Workshop
+const passport = require('passport');
+const expressSession = require('express-session');
+const MongoStore = require('connect-mongo')(session);
 
-var app = express();
+passport.serializeUser((user, done) =>{done(null, users._id)}
+);
+
+passport.deserializeUser(( value, done ) => {
+  User.findById(userId, (err, user) => {
+    done(err, user);
+  });
+});
+
+
+
+
+
+const routes = require('./routes/index');
+const { findById } = require('./models/user');
+
+
+
+
+
+
+
+const app = express();
 
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
@@ -25,7 +50,34 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 // mongodb connection
 mongoose.connect("mongodb://localhost:27017/bookworm-oauth");
-var db = mongoose.connection;
+const db = mongoose.connection;
+
+
+
+
+
+//Session config for Passport and MongoDB
+const sessionOptions = {
+  secret: "this is a super-super secret. Like REALLY secret",
+  resave: true,
+  saveUninitialized: true,
+  store: new MongoStore({
+    mongooseConnection: db
+  })
+};
+
+app.use(session(sessionOptions));
+
+//Initialize Passport
+app.use(passport.initialize());
+
+//Restore Passport session(restores prev session)
+app.use(passport.session());
+
+
+
+
+
 
 // mongo error
 db.on('error', console.error.bind(console, 'connection error:'));
@@ -34,7 +86,7 @@ app.use('/', routes);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
-  var err = new Error('Not Found');
+  const err = new Error('Not Found');
   err.status = 404;
   next(err);
 });
